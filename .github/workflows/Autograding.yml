@@ -105,12 +105,12 @@ jobs:
 
           # 3) Load allowed strings from CSVs (solution returns "{Name},{Last Name},{ID}")
           allowed = set()
-            p = Path(".__hidden_allowed.csv")
-            with open(p, newline="", encoding="utf-8") as f:
-              r = csv.DictReader(f)
-              for row in r:
-                s = f'{row["Name"].strip()},{row["Last Name"].strip()},{row["ID"].strip()}'
-                allowed.add(s)
+          p = Path(".__hidden_allowed.csv")
+          with open(p, newline="", encoding="utf-8") as f:
+            r = csv.DictReader(f)
+            for row in r:
+              s = f'{row["Name"].strip()},{row["Last Name"].strip()},{row["ID"].strip()}'
+              allowed.add(s)
 
           if out.strip() not in allowed:
             print("Incorrect output")
