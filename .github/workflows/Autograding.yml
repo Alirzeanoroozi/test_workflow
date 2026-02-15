@@ -1,8 +1,8 @@
-name: Autograding
+name: Autograding (solution.py + test_solution.py)
 on: [push]
 
 jobs:
-  grade:
+  test-grade:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,122 +11,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Hidden membership check
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests (solution.py via test_solution.py)
         run: |
-          python - <<'PY' | tee output.txt
-          import csv
-          import importlib
-          import sys
-          from pathlib import Path
+          pytest test_solution.py -v --tb=short 2>&1 | tee test-output.txt
+          exit "${PIPESTATUS[0]}"
 
-          # 1) Create a "hidden" CSV only inside the runner
-          csv_text = """ID,Name,Last Name,E-mail
-                  80153,AHMET,SELÇUK,ASELCUK21@KU.EDU.TR
-                  90053,AHMET ARDA,BAYRAK,abayrak24@ku.edu.tr
-                  90190,AHMET FARUK,AKSU,ahaksu24@ku.edu.tr
-                  91809,ALİ BARAN,KARAKÖSE,akarakose25@ku.edu.tr
-                  89336,ALPEREN,BAĞCI,abagci24@ku.edu.tr
-                  90118,ARDA,SALMAN,asalman24@ku.edu.tr
-                  89125,ARDA,DÜLGER,adulger24@ku.edu.tr
-                  91367,AYLA,GASIMOVA,agasimova25@ku.edu.tr
-                  92465,AZRA,HACIOĞLU,ahacioglu25@ku.edu.tr
-                  87178,BATURALP,SARIKAYA,bsarikaya23@ku.edu.tr
-                  89151,BEDİRHAN,ÖZKAN,bozkan24@ku.edu.tr
-                  92881,BERAT ERHAN,ERTÜRK,berturk25@ku.edu.tr
-                  92788,BERİL,KOCADİZ,bkocadiz25@ku.edu.tr
-                  91950,BERKAY,AYDINLI,baydinli25@ku.edu.tr
-                  89035,BORAY,AYDINLIOĞLU,baydinlioglu24@ku.edu.tr
-                  89389,BURAK,GÜREL,bgurel24@ku.edu.tr
-                  92299,BURÇAK,BARTIN,bbartin25@ku.edu.tr
-                  92206,CAN,REVA,creva25@ku.edu.tr
-                  89278,CELAL YAVUZ,ÇAĞIL,ccagil24@ku.edu.tr
-                  89665,CEM,KALENDER,ckalender24@ku.edu.tr
-                  90653,CEYDA EKİN,ALPAT,calpat24@ku.edu.tr
-                  92275,DAMLA,ALKAN,dalkan25@ku.edu.tr
-                  89121,DENİZ,ALPER,dalper24@ku.edu.tr
-                  90329,DURU,SELVER,dselver24@ku.edu.tr
-                  92874,EGE,ŞAHİN,egsahin25@ku.edu.tr
-                  90193,EGE,AYGÜN,egaygun24@ku.edu.tr
-                  86687,ELVAN,GÜZEL,eguzel23@ku.edu.tr
-                  92539,EMRE,BÖRÜ,eboru25@ku.edu.tr
-                  89594,ERAY,ÇITAKOĞLU,ecitakoglu24@ku.edu.tr
-                  87722,EREN,KASNIK,ekasnik23@ku.edu.tr
-                  90298,EREN DENİZ,GÜN,egun24@ku.edu.tr
-                  89792,ERKAN,ZİNİ,ezini24@ku.edu.tr
-                  86738,ETKİN,ESEN,eesen23@ku.edu.tr
-                  93042,GIZEM MELIS,YÜKSEL,gyuksel25@ku.edu.tr
-                  86339,HELİN,İDACI,hidaci23@ku.edu.tr
-                  87320,HÜSEYİN HASAN,ASLAN,haslan23@ku.edu.tr
-                  92273,HÜSEYİN UTKU,KILIÇ,hkilic25@ku.edu.tr
-                  92112,KUZEY,ŞAHİNCİ,ksahinci25@ku.edu.tr
-                  93489,MARIAM HADJARA,TOURE,mtoure25@ku.edu.tr
-                  91840,MEHMET,KOÇ,mkoc25@ku.edu.tr
-                  89766,MEHMET,KURŞUNOĞLU,mkursunoglu24@ku.edu.tr
-                  92952,MEHMET EFE,ÖZKAN,mozkan25@ku.edu.tr
-                  90654,MERT,SELEK,mselek24@ku.edu.tr
-                  89720,MİRAC,BİRLİK,mbirlik24@ku.edu.tr
-                  91401,MOHAMMAD NIDAL AHMAD,JOUDEH,mjoudeh25@ku.edu.tr
-                  87384,MUHAMMED EFE,KARAYAZ,mkarayaz23@ku.edu.tr
-                  89070,MUHAMMEDALİ,BAŞER,mbaser24@ku.edu.tr
-                  89312,MUHARREM SEÇKİN,TETİK,mtetik24@ku.edu.tr
-                  92435,MUSTAFA,ÖZARSLAN,mozarslan25@ku.edu.tr
-                  91850,NEBİ EYMEN,ATASEVER,natasever25@ku.edu.tr
-                  90172,NEDA,ŞENTÜRK,nsenturk24@ku.edu.tr
-                  92685,NİL,KESİKBAŞ,nkesikbas25@ku.edu.tr
-                  91777,ÖMER HALİT,İHTİYAROĞLU,oihtiyaroglu25@ku.edu.tr
-                  91089,RIAD,MURADOV,rmuradov25@ku.edu.tr
-                  92664,ŞADİ,SARIKAYA,ssarikaya25@ku.edu.tr
-                  71539,SALİH,BARIŞ,SBARIS19@KU.EDU.TR
-                  89595,TUNA,AYDIN,taydin24@ku.edu.tr
-                  90234,UMUT,KÜÇÜKDURSUN,ukucukdursun24@ku.edu.tr
-                  86862,YUSUF,KESİCİ,ykesici23@ku.edu.tr
-                  83119,YUSUF MERT,ÖZTÜRK,YOZTURK22@KU.EDU.TR
-                  87013,YUSUF UMUT,DÖNMEZ,ydonmez23@ku.edu.tr
-                  92799,ZEYNEP,ULUKAYA,zulukaya25@ku.edu.tr
-          """
-          Path(".__hidden_allowed.csv").write_text(csv_text, encoding="utf-8")
-
-          # 2) Import student's code (adjust module/function names)
-          # e.g., student submits solution.py containing def my_func(...):
-          try:
-            student = importlib.import_module("solution")
-          except Exception as e:
-            print("Could not import solution.py")
-            raise
-
-          if not hasattr(student, "my_func"):
-            print("Missing function: my_func")
-            sys.exit(1)
-
-          out = student.my_func()   # add args if needed
-          if not isinstance(out, str):
-            print("Output must be a string")
-            sys.exit(1)
-
-          # 3) Load allowed strings from CSVs (solution returns "{Name},{Last Name},{ID}")
-          allowed = set()
-          p = Path(".__hidden_allowed.csv")
-          with open(p, newline="", encoding="utf-8") as f:
-            r = csv.DictReader(f)
-            for row in r:
-              s = f'{row["Name"].strip()},{row["Last Name"].strip()},{row["ID"].strip()}'
-              allowed.add(s)
-
-          if out.strip() not in allowed:
-            print("Incorrect output")
-            sys.exit(1)
-
-          print("OK")
-          PY
-      - name: Show grading result
+      - name: Show test result
         if: always()
         run: |
-          echo "## Grading result"
+          echo "## Test grading result"
           echo "---"
-          cat output.txt 2>/dev/null || echo "(no output captured)"
+          cat test-output.txt 2>/dev/null || echo "(no test output captured)"
           echo "---"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: grading-results
-          path: output.txt
