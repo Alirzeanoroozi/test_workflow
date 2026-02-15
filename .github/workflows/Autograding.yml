@@ -118,7 +118,15 @@ jobs:
 
           print("OK")
           PY
+      - name: Show grading result
+        if: always()
+        run: |
+          echo "## Grading result"
+          echo "---"
+          cat output.txt 2>/dev/null || echo "(no output captured)"
+          echo "---"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: grading-results
           path: output.txt

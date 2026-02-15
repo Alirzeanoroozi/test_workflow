@@ -1,0 +1,35 @@
+name: Test grading (main.py + test.py)
+on: [push]
+
+jobs:
+  test-grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests (main.py via test.py)
+        run: |
+          pytest test.py -v --tb=short 2>&1 | tee test-output.txt
+          exit "${PIPESTATUS[0]}"
+
+      - name: Show test result
+        if: always()
+        run: |
+          echo "## Test grading result"
+          echo "---"
+          cat test-output.txt 2>/dev/null || echo "(no test output captured)"
+          echo "---"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-output.txt
